@@ -1,0 +1,26 @@
+{
+  "name": "slack-karma",
+  "version": "1.0.0",
+  "description": "A super simple karma bot for slack.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./index.js",
+    "debug": "DEBUG=true npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rdennis/slack-karma.git"
+  },
+  "author": "Robert Dennis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rdennis/slack-karma/issues"
+  },
+  "homepage": "https://github.com/rdennis/slack-karma#readme",
+  "dependencies": {
+    "@slack/client": "^4.8.0",
+    "@slack/events-api": "^2.1.1",
+    "dotenv": "^6.1.0"
+  }
+}
