@@ -1,4 +1,5 @@
 import { CommandFn } from './command';
+import { THING_TYPE } from '../thing-type';
 import * as db from '../db';
 
 interface Config {
@@ -24,7 +25,7 @@ function parseFlags(flags: string[]) {
     return config;
 }
 
-export function commandBuilder(thingType: db.THING_TYPE): CommandFn {
+export function commandBuilder(thingType: THING_TYPE): CommandFn {
     return async (flags, req, res) => {
         const config = parseFlags(flags);
         let result: db.KarmaRecord[];

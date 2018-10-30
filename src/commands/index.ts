@@ -1,18 +1,20 @@
 import { CommandFn } from './command';
-
 import help from './help';
 import queryBuilder from './query-builder';
 import * as db from '../db';
+import { THING_TYPE } from '../thing-type';
+import { sanitizeUser } from '../util';
 
 const commands: { [command: string]: CommandFn } = {
     help,
-    users: queryBuilder(db.THING_TYPE.user),
-    things: queryBuilder(db.THING_TYPE.thing)
+    users: queryBuilder(THING_TYPE.user),
+    things: queryBuilder(THING_TYPE.thing)
 };
 
 async function lookupThing(thing: string) {
+    thing = sanitizeUser(thing);
     const result = await db.get(thing);
-    return result || { id: 0, karma: 0, thing: '', type: db.THING_TYPE.unknown };
+    return result || { id: 0, karma: 0, thing: '', type: THING_TYPE.unknown };
 }
 
 export function getCommand(message: string) {

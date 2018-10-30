@@ -1,16 +1,11 @@
 import { Pool } from 'pg';
-import { getEnvVal, bool } from './util';
+import { getEnvVal, bool, sanitizeUser } from './util';
+import { THING_TYPE } from './thing-type';
 
 const pool = new Pool({
     connectionString: getEnvVal('DATABASE_URL'),
     ssl: getEnvVal('DATABASE_SSL', bool, true)
 });
-
-export enum THING_TYPE {
-    user = 'user',
-    thing = 'thing',
-    unknown = 'unknown'
-}
 
 export interface KarmaRecord {
     id: number
@@ -39,7 +34,7 @@ export async function getAll(): Promise<KarmaRecord[]> {
 
 export async function get(thing: string): Promise<KarmaRecord> {
     const client = await pool.connect();
-    const result = await client.query(`SELECT * FROM karma WHERE thing = '${thing}' FETCH FIRST 1 ROWS ONLY`);
+    const result = await client.query(`SELECT * FROM karma WHERE thing = '${sanitizeUser(thing)}' FETCH FIRST 1 ROWS ONLY`);
     const record: KarmaRecord = result.rows[0];
     client.release();
 
@@ -58,7 +53,7 @@ export async function createOrUpdate(record: KarmaRecord): Promise<void> {
     const client = await pool.connect();
     const query = record.id ?
         `UPDATE karma SET karma=${record.karma}` :
-        `INSERT INTO karma(thing, type, karma) values ('${record.thing}', '${record.type}', ${record.karma})`;
+        `INSERT INTO karma(thing, type, karma) values ('${sanitizeUser(record.thing)}', '${record.type}', ${record.karma})`;
     const result = await client.query(query);
     client.release();
 }

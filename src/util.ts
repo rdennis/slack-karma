@@ -1,3 +1,5 @@
+import { THING_TYPE } from "./thing-type";
+
 export function number(value: string, defaultVal: number) {
     let num = Number(value);
     return isNaN(num) ? defaultVal : num;
@@ -27,4 +29,29 @@ export function getEnvVal<T>(key: string, converter?: (str: string, defaultVal: 
     }
 
     return strValue;
+}
+
+/**
+ * Determines the type of thing based on the format.
+ * @param thing The thing to check
+ */
+export function getThingType(thing: string): THING_TYPE {
+    // users start with <, things start with `
+    return thing && (thing[0] === '<' ? THING_TYPE.user : thing[0] === '`' ? THING_TYPE.thing : THING_TYPE.unknown);
+}
+
+export function isUser(thing: string) {
+    return getThingType(thing) === THING_TYPE.user;
+}
+
+export function isThing(thing: string) {
+    return getThingType(thing) === THING_TYPE.thing;
+}
+
+export function sanitizeUser(thing: string) {
+    if (isUser(thing)) {
+        thing = thing.replace(/\|\w+>/, '>');
+    }
+
+    return thing;
 }

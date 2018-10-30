@@ -1,7 +1,7 @@
 import { config as envLoad } from 'dotenv';
 envLoad();
 
-import { getEnvVal, number, bool } from './util';
+import { getEnvVal, number, bool, getThingType, sanitizeUser } from './util';
 
 // ENV variables
 const PORT = getEnvVal('PORT', number, 3000);
@@ -64,15 +64,6 @@ function strToNum(str: string): number {
 }
 
 /**
- * Determines the type of thing based on the format.
- * @param thing The thing to check
- */
-function getThingType(thing: string): db.THING_TYPE {
-    // users start with <, things start with `
-    return thing[0] === '<' ? db.THING_TYPE.user : thing[0] === '`' ? db.THING_TYPE.thing : db.THING_TYPE.unknown;
-}
-
-/**
  * Checks if the thing is the user.
  * @param {string} thing The thing being changed
  * @param {string} user The user requesting changes
@@ -99,7 +90,7 @@ function getChanges(messageText: string) {
                 let [, user, thing, change] = match;
 
                 if (!changes.has(thing)) {
-                    changes.set(user || thing, strToNum(change));
+                    changes.set(sanitizeUser(user) || thing, strToNum(change));
                 }
             }
         } while (match);
