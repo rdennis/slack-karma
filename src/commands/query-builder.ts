@@ -44,15 +44,13 @@ export function commandBuilder(label: string, thingType: THING_TYPE): CommandFn 
             result = await db.getTop(thingType);
         }
 
-        message += ' karma.';
+        message += ' karma:';
 
-        //         res.send(`${message} karma:
-        // ${result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')}`);
         res.json({
-            response_type: 'in_channel',
+            response_type: 'ephemeral', // only visible to user
             text: message,
             attachments: [{
-                text: result.reduce((str, record) => `${str}\n${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`, '')
+                text: result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')
             }]
         });
     };
