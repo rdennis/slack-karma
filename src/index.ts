@@ -39,8 +39,7 @@ interface Update {
 
 /**
  * Converts a string of + or - to a Number.
- * @param {string} str A string of + or -.
- * @returns {Number}
+ * @param str A string of + or -.
  */
 function strToNum(str: string): number {
     let num = 0,
@@ -65,9 +64,8 @@ function strToNum(str: string): number {
 
 /**
  * Checks if the thing is the user.
- * @param {string} thing The thing being changed
- * @param {string} user The user requesting changes
- * @returns {boolean}
+ * @param thing The thing being changed
+ * @param user The user requesting changes
  */
 function thingIsCurrentUser(thing: string, user: string) {
     return thing === `<@${user}>`;
@@ -75,8 +73,7 @@ function thingIsCurrentUser(thing: string, user: string) {
 
 /**
  * Parses a message and returns the karma changes.
- * @param {string} messageText The text of the message from Slack
- * @returns {Map}
+ * @param messageText The text of the message from Slack
  */
 function getChanges(messageText: string) {
     let changes = new Map<string, number>();
@@ -101,9 +98,8 @@ function getChanges(messageText: string) {
 
 /**
  * Makes the changes to Karma.
- * @param {Map} changes Changes requested
- * @param {string} user
- * @returns {Array}
+ * @param changes Changes requested
+ * @param user
  */
 async function makeChanges(changes: Map<string, number>, user: string): Promise<Update[]> {
     let updates = [];
@@ -123,13 +119,16 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
 
                 let record = await db.get(thing);
 
+                console.log('got record:');
+                console.dir(record);
+
                 if (record) {
                     prev = record.karma;
                 }
 
                 now = prev + change;
 
-                console.log(`${thing}: ${prev} => ${now}${(buzzkill ? ' (buzzkill)' : '')}`);
+                console.log(`${thing}: ${change} ${prev} => ${now}${buzzkill ? ' (buzzkill)' : ''}`);
 
                 await db.createOrUpdate({ id: record && record.id, type: getThingType(thing), karma: now, thing });
             }
@@ -150,8 +149,7 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
 
 /**
  * Creates the message to be sent back to Slack after an update is made.
- * @param {Object} update The update
- * @returns {string}
+ * @param update The update
  */
 function getMessageText(update: Update) {
     let { sabotage, thing, change, now, prev, buzzkill } = update,
