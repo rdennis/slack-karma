@@ -1,7 +1,7 @@
 import { CommandFn } from './command';
 
 import help from './help';
-import queryBuilder from './query';
+import queryBuilder from './query-builder';
 import { THING_TYPE } from '../db';
 
 const commands: { [command: string]: CommandFn } = {
