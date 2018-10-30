@@ -43,7 +43,7 @@ export const things: CommandFn = async (flags, req, res) => {
     }
 
     res.send(`${message} karma:
-${result.map(record => `\n   ${record.karma}  ${record.thing}`)}`);
+${result.map(record => `\n ${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`)}`);
 };
 
 export default things;

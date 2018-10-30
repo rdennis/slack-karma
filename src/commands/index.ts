@@ -1,13 +1,13 @@
 import { CommandFn } from './command';
 
 import help from './help';
-import users from './users';
-import things from './things';
+import queryBuilder from './query';
+import { THING_TYPE } from '../db';
 
 const commands: { [command: string]: CommandFn } = {
     help,
-    users,
-    things
+    users: queryBuilder(THING_TYPE.user),
+    things: queryBuilder(THING_TYPE.thing)
 };
 
 export function getCommand(message: string) {
