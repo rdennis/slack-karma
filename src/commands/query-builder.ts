@@ -25,11 +25,11 @@ function parseFlags(flags: string[]) {
     return config;
 }
 
-export function commandBuilder(thingType: THING_TYPE): CommandFn {
+export function commandBuilder(label: string, thingType: THING_TYPE): CommandFn {
     return async (flags, req, res) => {
         const config = parseFlags(flags);
         let result: db.KarmaRecord[];
-        let message = `The ${thingType} with the `;
+        let message = `The ${label} with the `;
 
         if ((config.bottom && config.top) || (!config.bottom && !config.top)) {
             res.send('You must specify :top or :bottom.');

@@ -7,8 +7,8 @@ import { sanitizeUser } from '../util';
 
 const commands: { [command: string]: CommandFn } = {
     help,
-    users: queryBuilder(THING_TYPE.user),
-    things: queryBuilder(THING_TYPE.thing)
+    users: queryBuilder('users', THING_TYPE.user),
+    things: queryBuilder('things', THING_TYPE.thing)
 };
 
 async function lookupThing(thing: string) {
