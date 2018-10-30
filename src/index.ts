@@ -64,12 +64,21 @@ function strToNum(str: string): number {
 }
 
 /**
+ * Determines the type of thing based on the format.
+ * @param thing The thing to check
+ */
+function getThingType(thing: string): db.THING_TYPE {
+    // users start with <, things start with `
+    return thing[0] === '<' ? db.THING_TYPE.user : thing[0] === '`' ? db.THING_TYPE.thing : db.THING_TYPE.unknown;
+}
+
+/**
  * Checks if the thing is the user.
  * @param {string} thing The thing being changed
  * @param {string} user The user requesting changes
  * @returns {boolean}
  */
-function thingIsUser(thing: string, user: string) {
+function thingIsCurrentUser(thing: string, user: string) {
     return thing === `<@${user}>`;
 }
 
@@ -113,7 +122,7 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
             let prev = 0,
                 now = 0,
                 buzzkill = false,
-                sabotage = thingIsUser(thing, user);
+                sabotage = thingIsCurrentUser(thing, user);
 
             if (!sabotage) {
                 if (ENABLE_BUZZKILL && Math.abs(change) > BUZZKILL) {
@@ -131,7 +140,7 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
 
                 console.log(`${thing}: ${prev} => ${now}${(buzzkill ? ' (buzzkill)' : '')}`);
 
-                await db.createOrUpdate({ id: record && record.id, karma: now, thing });
+                await db.createOrUpdate({ id: record && record.id, type: getThingType(thing), karma: now, thing });
             }
 
             updates.push({
@@ -158,7 +167,7 @@ function getMessageText(update: Update) {
         text = change > 0 ? `Don't be a weasel.` : `Aw, don't be so hard on yourself.`;
 
     if (!sabotage) {
-        text = `${thing}'s karma has ${Math.abs(change) > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
+        text = `${thing}'s karma has ${change > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
     }
 
     return text;

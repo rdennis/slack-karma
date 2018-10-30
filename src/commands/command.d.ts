@@ -1,3 +1,3 @@
 import { Request, Response, RequestHandler } from 'express';
 
-type CommandFn = (tags: string[], req: Request, res: Response, next: RequestHandler) => void;
+type CommandFn = (tags: string[], req: Request, res: Response, next: RequestHandler) => Promise<void> | void;
