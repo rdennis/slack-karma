@@ -156,7 +156,7 @@ function makeChanges(changes: Map<string, number>, user: string): Update[] {
  */
 function getMessageText(update: Update) {
     let { sabotage, thing, change, now, prev, buzzkill } = update,
-        text = `SABOTAGE!! You can't change your own karma! SHAME!`;
+        text = change > 0 ? `Don't be a weasel.` : `Aw, don't be so hard on yourself.`;
 
     if (!sabotage) {
         text = `${thing}'s karma has ${Math.abs(change) > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
