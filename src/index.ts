@@ -23,11 +23,10 @@ import express from 'express';
 import bodyParser from 'body-parser';
 
 import getCommand from './commands';
+import * as db from './db';
 
 // match <@user-mention> or "something" ++ --
 const karmaParser = /(?:(?:(<@[WU].+?>))|(?:(`[^`]+`)))\s*([+-]{2,})/gi;
-
-const KARMA = new Map();
 
 interface Update {
     sabotage: boolean
@@ -89,8 +88,6 @@ function getChanges(messageText: string) {
 
             if (match) {
                 let [, user, thing, change] = match;
-                // thing = match[1] || match[2];
-                // change = strToNum(match[3]);
 
                 if (!changes.has(thing)) {
                     changes.set(user || thing, strToNum(change));
@@ -108,7 +105,7 @@ function getChanges(messageText: string) {
  * @param {string} user
  * @returns {Array}
  */
-function makeChanges(changes: Map<string, number>, user: string): Update[] {
+async function makeChanges(changes: Map<string, number>, user: string): Promise<Update[]> {
     let updates = [];
 
     if (changes.size > 0) {
@@ -124,15 +121,17 @@ function makeChanges(changes: Map<string, number>, user: string): Update[] {
                     change = BUZZKILL * (change > 0 ? 1 : -1);
                 }
 
-                if (KARMA.has(thing)) {
-                    prev = KARMA.get(thing);
+                let record = await db.get(thing);
+
+                if (record) {
+                    prev = record.karma;
                 }
 
                 now = prev + change;
 
                 console.log(`${thing}: ${prev} => ${now}${(buzzkill ? ' (buzzkill)' : '')}`);
 
-                KARMA.set(thing, now);
+                await db.createOrUpdate({ id: record && record.id, karma: now, thing });
             }
 
             updates.push({
@@ -170,13 +169,13 @@ const app = express();
 app.use('/slack/events', slackEvents.expressMiddleware());
 
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
-slackEvents.on('message', (event: Message) => {
+slackEvents.on('message', async (event: Message) => {
     // only allow users to make karma changes
     if (event.user) {
         console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
 
         let changes = getChanges(event.text);
-        let updates = makeChanges(changes, event.user);
+        let updates = await makeChanges(changes, event.user);
 
         if (updates) {
             console.log(`USER: ${event.user}`);
@@ -215,8 +214,9 @@ app.use('/slack/command', (req, res, next) => {
     command.fn(command.flags, req, res, next);
 });
 
-app.use('/', (req, res) => {
-    res.send('<h1>Slack Karma ☯</h1><p>Slack Karma is up and running.</p>');
+app.use('/', async (req, res) => {
+    res.send(`<h1>Slack Karma ☯</h1>
+<p>Slack Karma is up and running.</p>`);
 });
 
 
