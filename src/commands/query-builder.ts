@@ -45,7 +45,7 @@ export function commandBuilder(thingType: THING_TYPE): CommandFn {
         }
 
         res.send(`${message} karma:
-${result.map(record => `\n ${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`)}`);
+${result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')}`);
     };
 }
 
