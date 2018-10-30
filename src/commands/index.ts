@@ -12,7 +12,7 @@ const commands: { [command: string]: CommandFn } = {
 
 async function lookupThing(thing: string) {
     const result = await db.get(thing);
-    return result;
+    return result || {};
 }
 
 export function getCommand(message: string) {
