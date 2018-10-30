@@ -52,7 +52,7 @@ export async function getBottom(type: THING_TYPE, n: number = 10): Promise<Karma
 export async function createOrUpdate(record: KarmaRecord): Promise<void> {
     const client = await pool.connect();
     const query = record.id ?
-        `UPDATE karma SET karma=${record.karma}` :
+        `UPDATE karma SET karma = ${record.karma} WHERE id = ${record.id}` :
         `INSERT INTO karma(thing, type, karma) values ('${sanitizeUser(record.thing)}', '${record.type}', ${record.karma})`;
     const result = await client.query(query);
     client.release();

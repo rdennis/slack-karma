@@ -119,9 +119,6 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
 
                 let record = await db.get(thing);
 
-                console.log('got record:');
-                console.dir(record);
-
                 if (record) {
                     prev = record.karma;
                 }
