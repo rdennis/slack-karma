@@ -11,11 +11,17 @@ const SLACK_OAUTH_ACCESS_TOKEN = getEnvVal('SLACK_OAUTH_ACCESS_TOKEN');
 
 // Initialize using signing secret from env variables
 const { createEventAdapter } = require('@slack/events-api');
-const slackEvents = createEventAdapter(SLACK_SIGNING_SECRET);
+const slackEvents = createEventAdapter(SLACK_SIGNING_SECRET, { includeBody: true });
 
 // Initialize client with oauth token
 const { WebClient: SlackClient } = require('@slack/client');
 const slack = new SlackClient(SLACK_OAUTH_ACCESS_TOKEN);
+
+const http = require('http');
+const express = require('express');
+const bodyParser = require('body-parser');
+
+const { getCommand } = require('./commands');
 
 // match <@user-mention> or "something" ++ --
 const karmaParser = /(?:(?:(<@[WU].+?>))|(?:(`[^`]+`)))\s*([+-]{2,})/gi;
@@ -149,6 +155,26 @@ function getMessageText(update) {
     return text;
 }
 
+const app = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use('/slack/command', (req, res, next) => {
+    console.log('/slack/command');
+    console.dir(req.body);
+
+    let command = getCommand(req.body.text);
+
+    if (!command.fn) {
+        res.send(`Unknown command '${command.command}'.`);
+        return;
+    }
+
+    command.fn(command.flags, req, res, next);
+});
+
+app.use('/slack/events', slackEvents.expressMiddleware());
+
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
 slackEvents.on('message', event => {
     // only allow users to make karma changes
@@ -180,6 +206,6 @@ slackEvents.on('message', event => {
 slackEvents.on('error', console.error);
 
 // Start a basic HTTP server
-slackEvents.start(PORT).then(() => {
+http.createServer(app).listen(PORT, () => {
     console.log(`server listening on port ${PORT}`);
 });
