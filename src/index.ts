@@ -159,6 +159,21 @@ function getMessageText(update: Update) {
     return text;
 }
 
+/**
+ * Get the ts to use when replying to a thread.
+ * @param event The event
+ */
+function getParentMessage(event: Message) {
+    let ts = event.ts,
+        thread_ts = ts;
+
+    if (Object.prototype.hasOwnProperty.call(event, 'thread_ts')) {
+        thread_ts = (<any>event).thread_ts;
+    }
+
+    return ts !== thread_ts ? thread_ts : ts;
+}
+
 const app = express();
 
 app.use('/slack/events', slackEvents.expressMiddleware());
@@ -176,9 +191,12 @@ slackEvents.on('message', async (event: Message) => {
             console.log(`USER: ${event.user}`);
             for (let update of updates) {
                 let text = getMessageText(update);
+                let thread_ts = getParentMessage(event);
+
 
                 slack.chat.postMessage({
                     channel: event.channel,
+                    thread_ts,
                     text
                 })
                     .then((res: WebAPICallResult) => {
