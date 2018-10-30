@@ -35,7 +35,9 @@ export function getCommand(message: string) {
 
     if (!fn && !command) {
         fn = commands.help;
-    } else {
+    }
+
+    if (!fn) {
         fn = async (tags, req, res) => {
             const record = await lookupThing(command);
             res.send(`${record.thing || command} has ${record.karma || 0} karma.`);
