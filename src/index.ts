@@ -202,6 +202,10 @@ slackEvents.on('error', console.error);
 // slash command config
 app.use(bodyParser.urlencoded({ extended: false }));
 
+app.use('/', (req, res) => {
+    res.send('<h1>Slack Karma ☯</h1><p>Slack Karma is up and running.</p>');
+});
+
 app.use('/slack/command', (req, res, next) => {
     let command = getCommand(req.body.text);
 

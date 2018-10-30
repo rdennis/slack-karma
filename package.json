@@ -4,9 +4,11 @@
   "description": "A super simple karma bot for slack.",
   "main": "./dist/index.js",
   "scripts": {
+    "postinstall": "npm run build",
     "start": "node ./dist/index.js",
     "debug": "npm run build && DEBUG=true npm start",
     "build": "tsc",
+    "build:watch": "tsc -w",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
