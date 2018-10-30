@@ -218,7 +218,16 @@ app.use('/', async (req, res) => {
 ${
         records.length < 1 ?
             '<p><i>Empty!</i></p>' :
-            `<ol>${records.map(r => `<li>${r.karma} - ${r.thing}</li>`).join('')}</ol>`
+            `<table>
+    <thead>
+        <tr>
+            <th>Karma</th> <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        ${records.map(r => `<tr> <td style="text-align: right">${r.karma}</td> <td>${r.thing}</td> </tr>`).join('')}
+    </tbody>
+</table>`
         }`);
 });
 
