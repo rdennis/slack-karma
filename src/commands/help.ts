@@ -1,4 +1,6 @@
-module.exports = function (flags, req, res) {
+import { CommandFn } from './command';
+
+export const help: CommandFn = (flags, req, res) => {
     res.json({
         response_type: 'ephemeral', // only visible to user
         text: 'Karma bot is back baby!',
@@ -17,3 +19,5 @@ module.exports = function (flags, req, res) {
         }]
     });
 };
+
+export default help;

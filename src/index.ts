@@ -1,39 +1,49 @@
-require('dotenv').load();
+import { config as envLoad } from 'dotenv';
+envLoad();
 
-const { getEnvVal } = require('./util');
+import { getEnvVal, number, bool } from './util';
 
 // ENV variables
-const PORT = getEnvVal('PORT', 3000);
-const ENABLE_BUZZKILL = getEnvVal('ENABLE_BUZZKILL', true);
-const BUZZKILL = getEnvVal('BUZZKILL_LIMIT', 5);
+const PORT = getEnvVal('PORT', number, 3000);
+const ENABLE_BUZZKILL = getEnvVal('ENABLE_BUZZKILL', bool, true);
+const BUZZKILL = getEnvVal('BUZZKILL_LIMIT', number, 5);
 const SLACK_SIGNING_SECRET = getEnvVal('SLACK_SIGNING_SECRET');
 const SLACK_OAUTH_ACCESS_TOKEN = getEnvVal('SLACK_OAUTH_ACCESS_TOKEN');
 
 // Initialize using signing secret from env variables
-const { createEventAdapter } = require('@slack/events-api');
+import { createEventAdapter, Message } from '@slack/events-api';
 const slackEvents = createEventAdapter(SLACK_SIGNING_SECRET, { includeBody: true });
 
 // Initialize client with oauth token
-const { WebClient: SlackClient } = require('@slack/client');
+import { WebClient as SlackClient, WebAPICallResult } from '@slack/client';
 const slack = new SlackClient(SLACK_OAUTH_ACCESS_TOKEN);
 
-const http = require('http');
-const express = require('express');
-const bodyParser = require('body-parser');
+import http from 'http';
+import express from 'express';
+import bodyParser from 'body-parser';
 
-const { getCommand } = require('./commands');
+import getCommand from './commands';
 
 // match <@user-mention> or "something" ++ --
 const karmaParser = /(?:(?:(<@[WU].+?>))|(?:(`[^`]+`)))\s*([+-]{2,})/gi;
 
 const KARMA = new Map();
 
+interface Update {
+    sabotage: boolean
+    thing: string
+    buzzkill: boolean
+    change: number
+    prev: number
+    now: number
+}
+
 /**
  * Converts a string of + or - to a Number.
  * @param {string} str A string of + or -.
  * @returns {Number}
  */
-function strToNum(str) {
+function strToNum(str: string): number {
     let num = 0,
         change = str && str.length - 1,
         c = str && str[0];
@@ -60,7 +70,7 @@ function strToNum(str) {
  * @param {string} user The user requesting changes
  * @returns {boolean}
  */
-function thingIsUser(thing, user) {
+function thingIsUser(thing: string, user: string) {
     return thing === `<@${user}>`;
 }
 
@@ -69,8 +79,8 @@ function thingIsUser(thing, user) {
  * @param {string} messageText The text of the message from Slack
  * @returns {Map}
  */
-function getChanges(messageText) {
-    let changes = new Map();
+function getChanges(messageText: string) {
+    let changes = new Map<string, number>();
     let match;
 
     if (messageText) {
@@ -98,7 +108,7 @@ function getChanges(messageText) {
  * @param {string} user
  * @returns {Array}
  */
-function makeChanges(changes, user) {
+function makeChanges(changes: Map<string, number>, user: string): Update[] {
     let updates = [];
 
     if (changes.size > 0) {
@@ -144,7 +154,7 @@ function makeChanges(changes, user) {
  * @param {Object} update The update
  * @returns {string}
  */
-function getMessageText(update) {
+function getMessageText(update: Update) {
     let { sabotage, thing, change, now, prev, buzzkill } = update,
         text = `SABOTAGE!! You can't change your own karma! SHAME!`;
 
@@ -157,26 +167,10 @@ function getMessageText(update) {
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false }));
-
-app.use('/slack/command', (req, res, next) => {
-    console.log('/slack/command');
-    console.dir(req.body);
-
-    let command = getCommand(req.body.text);
-
-    if (!command.fn) {
-        res.send(`Unknown command '${command.command}'.`);
-        return;
-    }
-
-    command.fn(command.flags, req, res, next);
-});
-
 app.use('/slack/events', slackEvents.expressMiddleware());
 
 // Attach listeners to events by Slack Event "type". See: https://api.slack.com/events/message.im
-slackEvents.on('message', event => {
+slackEvents.on('message', (event: Message) => {
     // only allow users to make karma changes
     if (event.user) {
         console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
@@ -193,8 +187,8 @@ slackEvents.on('message', event => {
                     channel: event.channel,
                     text
                 })
-                    .then(res => {
-                        console.log('Message sent:', res.ts);
+                    .then((res: WebAPICallResult) => {
+                        console.log('Message sent:', res.ok);
                     })
                     .catch(console.error);
             }
@@ -204,6 +198,23 @@ slackEvents.on('message', event => {
 
 // Handle errors (see `errorCodes` export)
 slackEvents.on('error', console.error);
+
+// slash command config
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use('/slack/command', (req, res, next) => {
+    let command = getCommand(req.body.text);
+
+    if (!command.fn) {
+        console.error(`Unknown command: '${command.command}'.`);
+        res.send(`Unknown command '${command.command}'.`);
+        return;
+    }
+
+    console.log(`Calling command: ${(command.flags && command.flags.length > 0 ? `${command.flags.join(' ')} ` : '')}${command.command}`);
+    command.fn(command.flags, req, res, next);
+});
+
 
 // Start a basic HTTP server
 http.createServer(app).listen(PORT, () => {

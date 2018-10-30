@@ -1,16 +1,18 @@
-const help = require('./help');
-const users = require('./users');
-const things = require('./things');
+import { CommandFn } from './command';
 
-const commands = {
+import help from './help';
+import users from './users';
+import things from './things';
+
+const commands: { [command: string]: CommandFn } = {
     help,
     users,
     things
 };
 
-function getCommand(message) {
+export function getCommand(message: string) {
     let command = 'help';
-    let flags = [];
+    let flags: string[] = [];
     let words = message.split(' ');
 
     for (let word of words) {
@@ -29,6 +31,4 @@ function getCommand(message) {
     };
 }
 
-module.exports = {
-    getCommand
-};
+export default getCommand;
