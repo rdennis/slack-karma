@@ -30,7 +30,7 @@ async function getTopOrBottom(type: THING_TYPE, direction: 'DESC' | 'ASC', n: nu
 
 export async function getAll(): Promise<KarmaRecord[]> {
     const client = await pool.connect()
-    const result = await client.query('SELECT * FROM karma');
+    const result = await client.query('SELECT * FROM karma ORDER BY karma DESC');
     const results: KarmaRecord[] = result.rows;
     client.release();
 

@@ -224,8 +224,14 @@ app.use('/slack/command', (req, res, next) => {
 });
 
 app.use('/', async (req, res) => {
+    const records = await db.getAll();
+
     res.send(`<h1>Slack Karma ☯</h1>
-<p>Slack Karma is up and running.</p>`);
+<p>Slack Karma is up and running.</p>
+<h2>Leaderboard</h2>
+<ol>
+${records.map(r => `<li>${r.karma} - ${r.thing}</li>`)}
+</ol>`);
 });
 
 
