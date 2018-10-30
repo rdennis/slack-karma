@@ -2,13 +2,18 @@ import { CommandFn } from './command';
 
 import help from './help';
 import queryBuilder from './query-builder';
-import { THING_TYPE } from '../db';
+import * as db from '../db';
 
 const commands: { [command: string]: CommandFn } = {
     help,
-    users: queryBuilder(THING_TYPE.user),
-    things: queryBuilder(THING_TYPE.thing)
+    users: queryBuilder(db.THING_TYPE.user),
+    things: queryBuilder(db.THING_TYPE.thing)
 };
+
+async function lookupThing(thing: string) {
+    const result = await db.get(thing);
+    return result;
+}
 
 export function getCommand(message: string) {
     let command = 'help';
@@ -24,9 +29,20 @@ export function getCommand(message: string) {
         }
     }
 
+    let fn = commands[command];
+
+    if (!fn && !command) {
+        fn = commands.help;
+    } else {
+        fn = async (tags, req, res) => {
+            const record = await lookupThing(command);
+            res.send(`${record.thing} has ${record.karma || 0} karma.`);
+        };
+    }
+
     return {
-        command: command,
-        fn: commands[command] || commands.help,
+        command,
+        fn,
         flags
     };
 }
