@@ -44,8 +44,17 @@ export function commandBuilder(label: string, thingType: THING_TYPE): CommandFn 
             result = await db.getTop(thingType);
         }
 
-        res.send(`${message} karma:
-${result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')}`);
+        message += ' karma.';
+
+        //         res.send(`${message} karma:
+        // ${result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')}`);
+        res.json({
+            response_type: 'in_channel',
+            text: message,
+            attachments: [{
+                text: result.reduce((str, record) => `${str}\n${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`, '')
+            }]
+        });
     };
 }
 
