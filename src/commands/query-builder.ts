@@ -50,7 +50,7 @@ export function commandBuilder(label: string, thingType: THING_TYPE): CommandFn 
             response_type: 'ephemeral', // only visible to user
             text: message,
             attachments: [{
-                text: result.map(record => `${`${record.karma}`.padStart(5, ' ')}  ${record.thing}`).join('\n')
+                text: result.map(record => `${record.karma}  ${record.thing}`).join('\n')
             }]
         });
     };
