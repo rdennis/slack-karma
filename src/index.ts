@@ -159,18 +159,17 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
  * @param update The update
  */
 function getMessageText(update: Update) {
-    let { sabotage, thing, change, now, prev, buzzkill, success } = update,
-        text = change > 0 ? `Don't be a weasel.` : `Aw, don't be so hard on yourself.`;
-
-    if (!sabotage && success) {
-        text = `${thing}'s karma has ${change > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
-    }
+    const { sabotage, thing, change, now, prev, buzzkill, success } = update;
 
     if (!success) {
-        text = `Something went wrong. Failed to update karma for ${thing}.`;
+        throw `Something went wrong. Failed to update karma for ${thing}.`;
     }
 
-    return text;
+    if (sabotage) {
+        return change > 0 ? `Don't be a weasel.` : `Aw, don't be so hard on yourself.`;
+    } else {
+        return `${thing}'s karma has ${change > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
+    }
 }
 
 /**
