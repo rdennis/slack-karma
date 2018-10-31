@@ -127,7 +127,14 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
 
                 console.log(`${thing}: ${change} ${prev} => ${now}${buzzkill ? ' (buzzkill)' : ''}`);
 
-                await db.createOrUpdate({ id: record && record.id, type: getThingType(thing), karma: now, thing });
+                const karmaRecord: db.CreateOrUpdateRecord = {
+                    id: record && record.id,
+                    type: getThingType(thing),
+                    karma: now,
+                    thing
+                };
+
+                await db.createOrUpdate(karmaRecord, change, user);
             }
 
             updates.push({
@@ -233,17 +240,18 @@ app.use('/', async (req, res) => {
     res.send(`<h1>Slack Karma ☯</h1>
 <p>Slack Karma is up and running.</p>
 <h2>Leaderboard</h2>
-${
-        records.length < 1 ?
-            '<p><i>Empty!</i></p>' :
+${records.length < 1
+            ?
+            '<p><i>Empty!</i></p>'
+            :
             `<table>
     <thead>
         <tr>
-            <th>Karma</th> <th>Name</th>
+            <th>Karma</th> <th>Name</th> <th>Updated</th>
         </tr>
     </thead>
     <tbody>
-        ${records.map(r => `<tr> <td style="text-align: right">${r.karma}</td> <td>${r.thing}</td> </tr>`).join('')}
+        ${records.map(r => `<tr> <td style="text-align: right">${r.karma}</td> <td>${r.thing}</td> <td>${r.edited_on}</td> </tr>`).join('')}
     </tbody>
 </table>`
         }`);

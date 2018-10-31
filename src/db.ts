@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, PoolClient } from 'pg';
 import { getEnvVal, bool, sanitizeUser } from './util';
 import { THING_TYPE } from './thing-type';
 
@@ -7,36 +7,108 @@ const pool = new Pool({
     ssl: getEnvVal('DATABASE_SSL', bool, true)
 });
 
+// ensure our schema exists
+const ensureSchemaExists = (() => {
+    let called = false;
+
+    return async (client: PoolClient) => {
+        if (called) {
+            return;
+        }
+
+        await client.query(`
+CREATE TABLE IF NOT EXISTS karma(
+    id serial PRIMARY KEY,
+    thing text NOT NULL,
+    type text NOT NULL,
+    karma int NOT NULL,
+    edited_on timestamp NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS change(
+    id serial PRIMARY KEY,
+    delta int NOT NULL,
+    thing text NOT NULL,
+    editor text NOT NULL,
+    edited_on timestamp NOT NULL
+);
+`);
+
+        called = true;
+    };
+})();
+
+async function connect<T>(fn: (client: PoolClient) => Promise<T>) {
+    const client = await pool.connect();
+    await ensureSchemaExists(client);
+
+    const result = await fn(client);
+
+    client.release();
+
+    return result;
+}
+
+async function query<T>(command: string) {
+    const result = await connect(async (client) => await client.query(command));
+    const rows: T[] = result.rows;
+    return rows;
+}
+
+async function querySingle<T>(command: string) {
+    const rows: T[] = await query<T>(command);
+    return rows && rows[0];
+}
+
 export interface KarmaRecord {
     id: number
     thing: string
     type: THING_TYPE
     karma: number
+    edited_on: Date
+}
+
+export interface CreateOrUpdateRecord {
+    id?: number
+    thing: string
+    type: THING_TYPE
+    karma: number
+}
+
+export interface KarmaChangeRecord {
+    id: number
+    delta: number
+    thing: string
+    editor: string
+    edited_on: Date
 }
 
 async function getTopOrBottom(type: THING_TYPE, direction: 'DESC' | 'ASC', n: number = 10): Promise<KarmaRecord[]> {
-    const client = await pool.connect();
-    const result = await client.query(`SELECT * FROM karma WHERE type = '${type}' ORDER BY karma ${direction} FETCH FIRST ${n} ROWS ONLY`);
-    const records: KarmaRecord[] = result.rows;
-    client.release();
+    const records = await query<KarmaRecord>(`
+SELECT *
+    FROM karma 
+    WHERE type = '${type}' 
+    ORDER BY karma ${direction}
+    FETCH FIRST ${n} ROWS ONLY`);
 
     return records;
 }
 
 export async function getAll(): Promise<KarmaRecord[]> {
-    const client = await pool.connect()
-    const result = await client.query('SELECT * FROM karma ORDER BY karma DESC');
-    const results: KarmaRecord[] = result.rows;
-    client.release();
+    const results = await query<KarmaRecord>(`
+SELECT *
+    FROM karma
+    ORDER BY karma DESC`);
 
     return results;
 }
 
 export async function get(thing: string): Promise<KarmaRecord> {
-    const client = await pool.connect();
-    const result = await client.query(`SELECT * FROM karma WHERE thing = '${sanitizeUser(thing)}' FETCH FIRST 1 ROWS ONLY`);
-    const record: KarmaRecord = result.rows[0];
-    client.release();
+    const record = await querySingle<KarmaRecord>(`
+SELECT *
+    FROM karma
+    WHERE thing = '${sanitizeUser(thing)}'
+    FETCH FIRST 1 ROWS ONLY`);
 
     return record;
 }
@@ -49,11 +121,38 @@ export async function getBottom(type: THING_TYPE, n: number = 10): Promise<Karma
     return await getTopOrBottom(type, 'ASC', n);
 }
 
-export async function createOrUpdate(record: KarmaRecord): Promise<void> {
-    const client = await pool.connect();
-    const query = record.id ?
-        `UPDATE karma SET karma = ${record.karma} WHERE id = ${record.id}` :
-        `INSERT INTO karma(thing, type, karma) values ('${sanitizeUser(record.thing)}', '${record.type}', ${record.karma})`;
-    const result = await client.query(query);
-    client.release();
+export async function createOrUpdate(record: CreateOrUpdateRecord, change: number, editor: string): Promise<void> {
+    const now = new Date().toISOString();
+    record.thing = sanitizeUser(record.thing);
+    editor = sanitizeUser(editor);
+
+    const {
+        id,
+        karma,
+        thing,
+        type
+    } = record;
+
+    // create or update karma record
+    // create change record
+    const command = `${(
+        id ?
+            `
+UPDATE karma
+    SET karma = ${karma}
+    WHERE id = ${id};`
+            :
+            `
+INSERT INTO karma
+            (thing,      type,      karma,    edited_on)
+    values  ('${thing}', '${type}', ${karma}, ${now});`
+    )}
+
+INSERT INTO change
+            (delta,     thing,      editor,      edited_on)
+    values  (${change}, '${thing}', '${editor}', ${now})
+);`;
+
+
+    await query(command);
 }
