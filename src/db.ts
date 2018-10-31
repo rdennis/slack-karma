@@ -44,7 +44,7 @@ const p = (str: number) => `${str}`.padStart(2, '0');
  * Format a date as a postgresql timestamp.
  * @param date 
  */
-const timestamp = (date: Date) => `${date.getUTCFullYear()}-${p(date.getUTCMonth() + 1)}-${p(date.getUTCDay())} ${p(date.getUTCHours())}:${p(date.getUTCMinutes())}:${p(date.getUTCSeconds())}`;
+const timestamp = (date: Date) => `${date.getUTCFullYear()}-${p(date.getUTCMonth() + 1)}-${p(date.getUTCDate())} ${p(date.getUTCHours())}:${p(date.getUTCMinutes())}:${p(date.getUTCSeconds())}`;
 
 async function connect<T>(fn: (client: PoolClient) => Promise<T>) {
     const client = await pool.connect();
