@@ -15,7 +15,7 @@ import { createEventAdapter, Message } from '@slack/events-api';
 const slackEvents = createEventAdapter(SLACK_SIGNING_SECRET, { includeBody: true });
 
 // Initialize client with oauth token
-import { WebClient as SlackClient, WebAPICallResult } from '@slack/client';
+import { WebClient as SlackClient, WebAPICallResult, ChatPostMessageArguments } from '@slack/client';
 const slack = new SlackClient(SLACK_OAUTH_ACCESS_TOKEN);
 
 import http from 'http';
@@ -181,6 +181,20 @@ function getParentMessage(event: Message) {
     return ts !== thread_ts ? thread_ts : ts;
 }
 
+/**
+ * Send a chat message.
+ * @param message The message to be sent
+ */
+function postMessage(message: ChatPostMessageArguments) {
+    const promise = slack.chat.postMessage(message);
+
+    promise
+        .then(res => console.log('Message sent:', res.ok))
+        .catch(console.error);
+
+    return promise;
+}
+
 const app = express();
 
 app.use('/slack/events', slackEvents.expressMiddleware());
@@ -190,27 +204,38 @@ slackEvents.on('message', async (event: Message) => {
     // only allow users to make karma changes
     if (event.user) {
         console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
+        const thread_ts = getParentMessage(event);
 
-        let changes = getChanges(event.text);
-        let updates = await makeChanges(changes, event.user);
+        try {
+            let changes = getChanges(event.text);
+            let updates = await makeChanges(changes, event.user);
 
-        if (updates) {
-            console.log(`USER: ${event.user}`);
-            for (let update of updates) {
-                let text = getMessageText(update);
-                let thread_ts = getParentMessage(event);
-
-
-                slack.chat.postMessage({
-                    channel: event.channel,
-                    thread_ts,
-                    text
-                })
-                    .then((res: WebAPICallResult) => {
-                        console.log('Message sent:', res.ok);
-                    })
-                    .catch(console.error);
+            if (updates) {
+                console.log(`USER: ${event.user}`);
+                for (let update of updates) {
+                    postMessage({
+                        channel: event.channel,
+                        thread_ts,
+                        text: getMessageText(update)
+                    });
+                }
             }
+        } catch (err) {
+            console.error('An error occurred in the message event handler.');
+            console.error(err);
+
+            postMessage({
+                channel: event.channel,
+                thread_ts,
+                text: '',
+                icon_emoji: ':poop:',
+                attachments: [{
+                    fallback: `An error occurred. Tell Robert to fix it.`,
+                    title: 'Uh oh!',
+                    text: `An error occurred. Tell Robert to fix it.`,
+                    color: 'danger'
+                }]
+            });
         }
     }
 });
