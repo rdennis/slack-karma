@@ -287,7 +287,24 @@ app.use('/', async (req, res) => {
     const records = await db.getAll();
     const changes = await db.getChanges(changesN);
 
-    res.send(`<h1>Slack Karma ☯</h1>
+    res.send(`
+<style>
+    table {
+        border-collapse: collapse;
+        border: 1px solid #f5f5f5;
+        background: #f5f5f5;
+    }
+
+    th, td {
+        padding: 5px 10px;
+    }
+
+    tbody > tr:nth-of-type(odd) {
+        background: #ffffff;
+    }
+</style>
+
+<h1>Slack Karma ☯</h1>
 <p>Slack Karma is up and running.</p>
 <h2>Leaderboard</h2>
     ${records.length < 1
@@ -305,9 +322,9 @@ app.use('/', async (req, res) => {
                 <tbody>
                     ${records.map(r => `
                         <tr>
-                            <td style="text-align: right">${r.karma}</td>
+                            <td>${r.karma}</td>
                             <td>${r.thing}</td>
-                            <td>${r.edited_on}</td>
+                            <td>${r.edited_on.toISOString()}</td>
                         </tr>`).join('')}
                 </tbody>
             </table>`
@@ -334,7 +351,7 @@ app.use('/', async (req, res) => {
                                 <td>${c.delta}</td>
                                 <td>${c.thing}</td>
                                 <td>${c.editor}</td>
-                                <td>${c.edited_on}</td>
+                                <td>${c.edited_on.toISOString()}</td>
                             </tr>`).join('')}
                     </tbody>
                 </table>
