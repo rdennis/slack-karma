@@ -35,6 +35,7 @@ interface Update {
     change: number
     prev: number
     now: number
+    success: boolean
 }
 
 /**
@@ -109,7 +110,8 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
             let prev = 0,
                 now = 0,
                 buzzkill = false,
-                sabotage = thingIsCurrentUser(thing, user);
+                sabotage = thingIsCurrentUser(thing, user),
+                success = false;
 
             if (!sabotage) {
                 if (ENABLE_BUZZKILL && Math.abs(change) > BUZZKILL) {
@@ -134,7 +136,7 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
                     thing
                 };
 
-                await db.createOrUpdate(karmaRecord, change, user);
+                success = await db.createOrUpdate(karmaRecord, change, user);
             }
 
             updates.push({
@@ -143,7 +145,8 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
                 buzzkill,
                 change,
                 prev,
-                now
+                now,
+                success
             });
         }
     }
@@ -156,11 +159,15 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
  * @param update The update
  */
 function getMessageText(update: Update) {
-    let { sabotage, thing, change, now, prev, buzzkill } = update,
+    let { sabotage, thing, change, now, prev, buzzkill, success } = update,
         text = change > 0 ? `Don't be a weasel.` : `Aw, don't be so hard on yourself.`;
 
-    if (!sabotage) {
+    if (!sabotage && success) {
         text = `${thing}'s karma has ${change > 0 ? 'increased' : 'decreased'} from ${prev} to ${now}${(buzzkill ? ` (Buzzkill Mode™️ has enforced a maximum change of ${BUZZKILL} point${BUZZKILL === 1 ? '' : 's'})` : '')}.`;
+    }
+
+    if (!success) {
+        text = `Something went wrong. Failed to update karma for ${thing}.`;
     }
 
     return text;

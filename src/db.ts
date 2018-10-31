@@ -121,7 +121,7 @@ export async function getBottom(type: THING_TYPE, n: number = 10): Promise<Karma
     return await getTopOrBottom(type, 'ASC', n);
 }
 
-export async function createOrUpdate(record: CreateOrUpdateRecord, change: number, editor: string): Promise<void> {
+export async function createOrUpdate(record: CreateOrUpdateRecord, change: number, editor: string): Promise<boolean> {
     const now = new Date().toISOString();
     record.thing = sanitizeUser(record.thing);
     editor = sanitizeUser(editor);
@@ -154,5 +154,14 @@ INSERT INTO change
 );`;
 
 
-    await query(command);
+    try {
+        await query(command);
+    } catch (err) {
+        console.error('Failed to create or update karma record.');
+        console.error('command:', command);
+        console.error(err);
+        return false;
+    }
+
+    return true;
 }
