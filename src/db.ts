@@ -160,8 +160,7 @@ INSERT INTO karma
 
 INSERT INTO change
             (delta,     thing,      editor,      edited_on)
-    values  (${change}, '${thing}', '${editor}', '${now}')
-);`;
+    values  (${change}, '${thing}', '${editor}', '${now}');`;
 
 
     try {
