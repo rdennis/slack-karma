@@ -38,6 +38,14 @@ CREATE TABLE IF NOT EXISTS change(
     };
 })();
 
+const p = (str: number) => `${str}`.padStart(2, '0');
+
+/**
+ * Format a date as a postgresql timestamp.
+ * @param date 
+ */
+const timestamp = (date: Date) => `${date.getUTCFullYear()}-${p(date.getUTCMonth() + 1)}-${p(date.getUTCDay())} ${p(date.getUTCHours())}:${p(date.getUTCMinutes())}:${p(date.getUTCSeconds())}`;
+
 async function connect<T>(fn: (client: PoolClient) => Promise<T>) {
     const client = await pool.connect();
     await ensureSchemaExists(client);
@@ -122,9 +130,11 @@ export async function getBottom(type: THING_TYPE, n: number = 10): Promise<Karma
 }
 
 export async function createOrUpdate(record: CreateOrUpdateRecord, change: number, editor: string): Promise<boolean> {
-    const now = new Date().toISOString();
+    // make sure users are good
     record.thing = sanitizeUser(record.thing);
     editor = sanitizeUser(editor);
+
+    const now = timestamp(new Date());
 
     const {
         id,

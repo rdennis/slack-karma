@@ -15,7 +15,7 @@ import { createEventAdapter, Message } from '@slack/events-api';
 const slackEvents = createEventAdapter(SLACK_SIGNING_SECRET, { includeBody: true });
 
 // Initialize client with oauth token
-import { WebClient as SlackClient, WebAPICallResult, ChatPostMessageArguments } from '@slack/client';
+import { WebClient as SlackClient, WebAPICallResult, ChatPostMessageArguments, MessageAttachment } from '@slack/client';
 const slack = new SlackClient(SLACK_OAUTH_ACCESS_TOKEN);
 
 import http from 'http';
@@ -213,6 +213,25 @@ slackEvents.on('message', async (event: Message) => {
         console.log(`Received a message event: user ${event.user} in channel ${event.channel} says ${event.text}`);
         const thread_ts = getParentMessage(event);
 
+        const postErrorMessage = (attachments: MessageAttachment[] = []) => {
+            // put generic error message in front of other attachments
+            attachments.unshift({
+                fallback: `An error occurred. Tell Robert to fix it.`,
+                title: 'Uh oh!',
+                text: `An error occurred. Tell Robert to fix it.`,
+                color: 'danger'
+            });
+
+            postMessage({
+                channel: event.channel,
+                thread_ts,
+                text: '',
+                icon_emoji: ':poop:',
+                attachments
+            });
+        };
+
+
         try {
             let changes = getChanges(event.text);
             let updates = await makeChanges(changes, event.user);
@@ -220,29 +239,26 @@ slackEvents.on('message', async (event: Message) => {
             if (updates) {
                 console.log(`USER: ${event.user}`);
                 for (let update of updates) {
-                    postMessage({
-                        channel: event.channel,
-                        thread_ts,
-                        text: getMessageText(update)
-                    });
+                    try {
+                        postMessage({
+                            channel: event.channel,
+                            thread_ts,
+                            text: getMessageText(update)
+                        });
+                    } catch (err) {
+                        postErrorMessage([{
+                            fallback: err,
+                            title: 'Error',
+                            text: err,
+                            color: 'danger'
+                        }]);
+                    }
                 }
             }
         } catch (err) {
             console.error('An error occurred in the message event handler.');
             console.error(err);
-
-            postMessage({
-                channel: event.channel,
-                thread_ts,
-                text: '',
-                icon_emoji: ':poop:',
-                attachments: [{
-                    fallback: `An error occurred. Tell Robert to fix it.`,
-                    title: 'Uh oh!',
-                    text: `An error occurred. Tell Robert to fix it.`,
-                    color: 'danger'
-                }]
-            });
+            postErrorMessage();
         }
     }
 });
