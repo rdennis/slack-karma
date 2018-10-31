@@ -7,7 +7,9 @@ export const help: CommandFn = (flags, req, res) => {
         attachments: [{
             title: 'Usage',
             text:
-                `/karma                 print this help message
+                `
+\`\`\`
+/karma                  print this help message
 /karma :top things      show top 10 things
 /karma :bottom things   show bottom 10 things
 /karma :top users       show top 10 users
@@ -17,7 +19,9 @@ export const help: CommandFn = (flags, req, res) => {
 \`thing\`++             add 1 karma to thing
 \`thing\`---            remove 2 karma from thing
 \`subject phrase\`++    add 1 karma to a subject phrase
-@user++                 add 1 karma to a user`
+@user++                 add 1 karma to a user
+\`\`\`
+`
         }]
     });
 };
