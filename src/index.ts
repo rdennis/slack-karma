@@ -282,25 +282,63 @@ app.use('/slack/command', (req, res, next) => {
 });
 
 app.use('/', async (req, res) => {
+    const changesN = 100;
+
     const records = await db.getAll();
+    const changes = await db.getChanges(changesN);
 
     res.send(`<h1>Slack Karma ☯</h1>
 <p>Slack Karma is up and running.</p>
 <h2>Leaderboard</h2>
-${records.length < 1
+    ${records.length < 1
             ?
             '<p><i>Empty!</i></p>'
             :
             `<table>
-    <thead>
-        <tr>
-            <th>Karma</th> <th>Name</th> <th>Updated</th>
-        </tr>
-    </thead>
-    <tbody>
-        ${records.map(r => `<tr> <td style="text-align: right">${r.karma}</td> <td>${r.thing}</td> <td>${r.edited_on}</td> </tr>`).join('')}
-    </tbody>
-</table>`
+                <thead>
+                    <tr>
+                        <th>Karma</th>
+                        <th>Name</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${records.map(r => `
+                        <tr>
+                            <td style="text-align: right">${r.karma}</td>
+                            <td>${r.thing}</td>
+                            <td>${r.edited_on}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`
+        }
+        
+    ${changes.length < 1
+            ?
+            ''
+            :
+            `<details>
+                <summary>Latest ${changesN} Changes</summary>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Delta</th>
+                            <th>Name</th>
+                            <th>Editor</th>
+                            <th>Edited On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${changes.map(c => `
+                            <tr>
+                                <td>${c.delta}</td>
+                                <td>${c.thing}</td>
+                                <td>${c.editor}</td>
+                                <td>${c.edited_on}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+            </details>`
         }`);
 });
 

@@ -174,3 +174,13 @@ INSERT INTO change
 
     return true;
 }
+
+export async function getChanges(n: number = 100) {
+    const changes = await query<KarmaChangeRecord>(`
+SELECT *
+    FROM change
+    ORDER BY edited_on DESC
+    FETCH FIRST ${n} ROWS ONLY`);
+
+    return changes;
+}
