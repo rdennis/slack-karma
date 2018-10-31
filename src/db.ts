@@ -155,12 +155,12 @@ UPDATE karma
             `
 INSERT INTO karma
             (thing,      type,      karma,    edited_on)
-    values  ('${thing}', '${type}', ${karma}, ${now});`
+    values  ('${thing}', '${type}', ${karma}, '${now}');`
     )}
 
 INSERT INTO change
             (delta,     thing,      editor,      edited_on)
-    values  (${change}, '${thing}', '${editor}', ${now})
+    values  (${change}, '${thing}', '${editor}', '${now}')
 );`;
 
 
