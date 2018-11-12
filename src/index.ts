@@ -24,9 +24,7 @@ import bodyParser from 'body-parser';
 
 import getCommand from './commands';
 import * as db from './db';
-
-// match <@user-mention> or "something" ++ --
-const karmaParser = /(?:(?:(<@[WU].+?>))|(?:(`[^`]+`)))\s*([+-]{2,})/gi;
+import { getChanges } from './parser';
 
 interface Update {
     sabotage: boolean
@@ -39,62 +37,12 @@ interface Update {
 }
 
 /**
- * Converts a string of + or - to a Number.
- * @param str A string of + or -.
- */
-function strToNum(str: string): number {
-    let num = 0,
-        change = str && str.length - 1,
-        c = str && str[0];
-
-    // assume all characters are the same
-    switch (c) {
-        case '+':
-            num = change;
-            break;
-        case '-':
-            num = change * -1;
-            break;
-        default:
-            console.warn(`strToNum: unknown character '${c}'`);
-            break;
-    }
-
-    return num;
-}
-
-/**
  * Checks if the thing is the user.
  * @param thing The thing being changed
  * @param user The user requesting changes
  */
 function thingIsCurrentUser(thing: string, user: string) {
     return thing === `<@${user}>`;
-}
-
-/**
- * Parses a message and returns the karma changes.
- * @param messageText The text of the message from Slack
- */
-function getChanges(messageText: string) {
-    let changes = new Map<string, number>();
-    let match;
-
-    if (messageText) {
-        do {
-            match = karmaParser.exec(messageText);
-
-            if (match) {
-                let [, user, thing, change] = match;
-
-                if (!changes.has(thing)) {
-                    changes.set(sanitizeUser(user) || thing, strToNum(change));
-                }
-            }
-        } while (match);
-    }
-
-    return changes;
 }
 
 /**
