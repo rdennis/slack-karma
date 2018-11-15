@@ -46,4 +46,11 @@ describe('getChanges', () => {
             ]
         )
     );
+    it('can handle emoji with weird characters',
+        testGetChanges(
+            `:my-emoji_with--weird+characters'''1:--`,
+            [
+                [`:my-emoji_with--weird+characters'''1:`, -1]
+            ]
+        ));
 });

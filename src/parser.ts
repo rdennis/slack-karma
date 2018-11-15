@@ -1,7 +1,7 @@
 import { sanitizeUser } from "./util";
 
 // match <@user-mention> or `something` or :some-emoji: ++ --
-const karmaParser = /(?:(<@[WU][^>]+?>)|((?:`[^`]+`)|(?::[-\w]+:)))\s*([+-]{2,})/gi;
+const karmaParser = /(?:(<@[WU][^>]+?>)|((?:`[^`]+`)|(?::[-+'\w]+:)))\s*([+-]{2,})/gi;
 
 /**
  * Converts a string of + or - to a Number.
