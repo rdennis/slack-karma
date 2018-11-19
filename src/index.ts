@@ -59,32 +59,36 @@ async function makeChanges(changes: Map<string, number>, user: string): Promise<
                 now = 0,
                 buzzkill = false,
                 sabotage = thingIsCurrentUser(thing, user),
-                success = false;
+                success = true;
 
             if (!sabotage) {
-                if (ENABLE_BUZZKILL && Math.abs(change) > BUZZKILL) {
-                    buzzkill = true;
-                    change = BUZZKILL * (change > 0 ? 1 : -1);
+                try {
+                    if (ENABLE_BUZZKILL && Math.abs(change) > BUZZKILL) {
+                        buzzkill = true;
+                        change = BUZZKILL * (change > 0 ? 1 : -1);
+                    }
+
+                    let record = await db.get(thing);
+
+                    if (record) {
+                        prev = record.karma;
+                    }
+
+                    now = prev + change;
+
+                    console.log(`${thing}: ${change} ${prev} => ${now}${buzzkill ? ' (buzzkill)' : ''}`);
+
+                    const karmaRecord: db.CreateOrUpdateRecord = {
+                        id: record && record.id,
+                        type: getThingType(thing),
+                        karma: now,
+                        thing
+                    };
+
+                    success = await db.createOrUpdate(karmaRecord, change, user);
+                } catch (ex) {
+                    success = false;
                 }
-
-                let record = await db.get(thing);
-
-                if (record) {
-                    prev = record.karma;
-                }
-
-                now = prev + change;
-
-                console.log(`${thing}: ${change} ${prev} => ${now}${buzzkill ? ' (buzzkill)' : ''}`);
-
-                const karmaRecord: db.CreateOrUpdateRecord = {
-                    id: record && record.id,
-                    type: getThingType(thing),
-                    karma: now,
-                    thing
-                };
-
-                success = await db.createOrUpdate(karmaRecord, change, user);
             }
 
             updates.push({
