@@ -1,3 +1,4 @@
+import 'newrelic';
 import { config as envLoad } from 'dotenv';
 envLoad();
 
